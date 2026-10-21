@@ -139,16 +139,11 @@ python scripts/tg_send.py --chat me --text "Встреча завтра в 11:00
 [Полные правила отправки](references/safety.md) ·
 [Инструкция API](references/api-keys.md) · [История версий](CHANGELOG.md)
 
-## Для разработчиков
+## Автор
 
-```text
-python -m unittest discover -s tests -v
-```
+[Тимур Угулава](https://t.me/+ZPqkVNfhlA1mNWIy) — про AI-ассистентов, скиллы
+и то, как это всё приделать к живой работе.
 
-Тестам не нужны реальные ключи. Перед выпуском они прогнаны на macOS;
-запуск на Linux и Windows пока не проверялся.
+## Лицензия
 
-## Автор и лицензия
-
-[Тимур Угулава](https://github.com/TimurUgulava) · [Telegram-канал](https://t.me/dzenopulse).
-[MIT](LICENSE).
+[MIT](LICENSE) — делайте что хотите, ссылка приветствуется.
