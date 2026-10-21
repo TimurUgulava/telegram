@@ -1,0 +1,4 @@
+interface:
+  display_name: "Telegram"
+  short_description: "Чтение и отправка в Telegram с согласованием"
+  default_prompt: "Используй $telegram, чтобы настроить доступ к моему Telegram."

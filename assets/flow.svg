@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="350" viewBox="0 0 1200 350" role="img" aria-labelledby="title desc">
+  <title id="title">Telegram: от настройки до отправки</title>
+  <desc id="desc">Если ключей нет, скилл помогает получить их. Затем локальный вход, выбор чата, просмотр текста и подтверждённая отправка.</desc>
+  <rect width="1200" height="350" rx="24" fill="#101c2c"/>
+  <g font-family="Arial, sans-serif" fill="#f1f5f9">
+    <text x="44" y="52" font-size="26" font-weight="bold">Ваш Telegram. Ваш текст. Ваше подтверждение.</text>
+    <text x="44" y="84" font-size="17" fill="#a9bfd2">Если ключей ещё нет — начинаем с их получения, а не с ошибки настройки.</text>
+    <g fill="#1d354c" stroke="#42617d" stroke-width="2">
+      <rect x="44" y="130" width="220" height="112" rx="15"/>
+      <rect x="340" y="130" width="220" height="112" rx="15"/>
+      <rect x="636" y="130" width="220" height="112" rx="15"/>
+      <rect x="932" y="130" width="220" height="112" rx="15" fill="#174c47" stroke="#49baa6"/>
+    </g>
+    <g font-size="21" text-anchor="middle" font-weight="bold">
+      <text x="154" y="170">API и вход</text>
+      <text x="450" y="170">Выбор чата</text>
+      <text x="746" y="170">Просмотр</text>
+      <text x="1042" y="170">Отправка</text>
+    </g>
+    <g font-size="15" text-anchor="middle" fill="#c0d1df">
+      <text x="154" y="199">Инструкция Windows / Mac</text>
+      <text x="154" y="222">Секреты — локально</text>
+      <text x="450" y="199">Название и точный ID</text>
+      <text x="450" y="222">Без угадывания</text>
+      <text x="746" y="199">Полный текст сообщения</text>
+      <text x="746" y="222">Пока ничего не отправлено</text>
+      <text x="1042" y="199">После вашего «да»</text>
+      <text x="1042" y="222">Номер сообщения в ответе</text>
+    </g>
+    <g stroke="#7b9cb6" stroke-width="3" fill="none">
+      <path d="M280 186h40m-10-9 10 9-10 9"/>
+      <path d="M576 186h40m-10-9 10 9-10 9"/>
+      <path d="M872 186h40m-10-9 10 9-10 9"/>
+    </g>
+    <text x="44" y="302" font-size="17" fill="#a9bfd2">Поиск и чтение доступны отдельно. Массовые рассылки и автоматические ответы не входят в скилл.</text>
+  </g>
+</svg>
