@@ -9,7 +9,7 @@ import sqlite3
 import sys
 
 from _tg_common import (config_path, get_client, get_credentials, get_session,
-                        make_client, save_credentials, session_file, validate_credentials)
+                        is_elevated, make_client, save_credentials, session_file, validate_credentials)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -32,7 +32,22 @@ def check(offline=False):
     print("Подключение к личному аккаунту подтверждено. Сообщения не отправлялись.")
 
 
+def prompt_credentials():
+    print("api_hash при вводе не виден. Вставьте его один раз и нажмите Enter.")
+    for _ in range(3):
+        api_id = input("api_id: ").strip()
+        api_hash = getpass.getpass("api_hash (ввод скрыт): ")
+        try:
+            return validate_credentials(api_id, api_hash)
+        except SystemExit as error:
+            print(str(error))
+    raise SystemExit("Не удалось проверить формат ключей. Проверьте значения на странице приложения.")
+
+
 def setup():
+    if is_elevated():
+        raise SystemExit("Закройте окно с правами администратора. Запустите мастер в обычном "
+                         "PowerShell или Терминале, без sudo. Ключи и сессия не изменены.")
     if not sys.stdin.isatty():
         raise SystemExit("Запустите мастер в своём терминале. Ключи, код и пароль не вводятся в чат.")
     print("Настройка Telegram. Мастер не отправляет сообщения в чаты.")
@@ -46,8 +61,7 @@ def setup():
         print("API-ключей ещё нет. Получите их по инструкции ниже.")
         api_guide()
         print("Когда получите ключи, вернитесь сюда. Прервать мастер: Ctrl+C.")
-        credentials = validate_credentials(input("api_id: ").strip(),
-                                           getpass.getpass("api_hash (ввод скрыт): "))
+        credentials = prompt_credentials()
         answer = input("Сохранить ключи в локальном конфиге? [д/н]: ").strip().lower()
         if answer not in {"д", "да", "y", "yes"}:
             raise SystemExit("Отменено, ключи не сохранены. Можно использовать TG_API_ID/TG_API_HASH.")
@@ -105,6 +119,9 @@ def main():
     except OSError:
         raise SystemExit("Ошибка доступа к файлам или сети. Проверьте права и подключение; секреты не выводятся.")
     except Exception as error:
+        if type(error).__name__ == "ApiIdInvalidError":
+            raise SystemExit("Telegram отклонил пару api_id/api_hash. Проверьте оба значения "
+                             "у одного приложения; не отправляйте ключи в чат.")
         raise SystemExit("Telegram не завершил операцию (" + type(error).__name__ +
                          "). Проверьте подключение и ключи; не повторяйте вход многократно.")
 

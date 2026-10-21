@@ -6,6 +6,7 @@ import getpass
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -20,10 +21,13 @@ def config_path():
 
 def read_config():
     path = config_path()
-    if not path.exists():
-        return {}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except PermissionError:
+        raise SystemExit("[telegram] Нет доступа к config.json. Закройте администраторское окно, "
+                         "откройте обычный терминал и проверьте владельца файла. Не удаляйте сессию.")
     except (OSError, ValueError):
         raise SystemExit("[telegram] Не удалось прочитать локальный config.json. " + SETUP_HINT)
     if not isinstance(data, dict):
@@ -52,9 +56,18 @@ def validate_credentials(api_id, api_hash):
         raise SystemExit("[telegram] api_id должен быть положительным числом.")
     if api_id <= 0:
         raise SystemExit("[telegram] api_id должен быть положительным числом.")
-    if not isinstance(api_hash, str) or not api_hash.strip():
-        raise SystemExit("[telegram] api_hash не задан. " + SETUP_HINT)
+    if not isinstance(api_hash, str) or not re.fullmatch(r"[0-9a-fA-F]{32}", api_hash.strip()):
+        raise SystemExit("[telegram] api_hash должен содержать ровно 32 символа: цифры 0–9 "
+                         "и латинские буквы a–f. Скопируйте значение целиком и вставьте один раз.")
     return api_id, api_hash.strip()
+
+
+def is_elevated():
+    """Detect an elevated Windows token or a root process on Unix."""
+    if sys.platform == "win32":
+        import ctypes
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    return hasattr(os, "geteuid") and os.geteuid() == 0
 
 
 def get_credentials():

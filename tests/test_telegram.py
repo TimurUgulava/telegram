@@ -16,6 +16,9 @@ import _tg_common as auth
 import setup_telegram as setup
 import tg_send
 
+TEST_HASH = "0" * 32
+OTHER_HASH = "1" * 32
+
 
 class CredentialsTests(unittest.TestCase):
     def setUp(self):
@@ -38,21 +41,21 @@ class CredentialsTests(unittest.TestCase):
         self.assertIn("api-guide", str(error.exception))
 
     def test_save_reload_and_restrict_permissions(self):
-        auth.save_credentials(12345, "example-hash-not-a-real-credential")
-        self.assertEqual(auth.get_credentials(), (12345, "example-hash-not-a-real-credential"))
+        auth.save_credentials(12345, TEST_HASH)
+        self.assertEqual(auth.get_credentials(), (12345, TEST_HASH))
         if os.name != "nt":
             self.assertEqual(auth.config_path().stat().st_mode & 0o777, 0o600)
 
     def test_partial_env_does_not_mix_with_config(self):
-        auth.save_credentials(12345, "example-hash")
+        auth.save_credentials(12345, TEST_HASH)
         os.environ["TG_API_ID"] = "54321"
         with self.assertRaises(SystemExit):
             auth.get_credentials()
 
     def test_full_env_pair_overrides_config(self):
-        auth.save_credentials(12345, "old-example")
-        os.environ.update(TG_API_ID="54321", TG_API_HASH="new-example")
-        self.assertEqual(auth.get_credentials(), (54321, "new-example"))
+        auth.save_credentials(12345, TEST_HASH)
+        os.environ.update(TG_API_ID="54321", TG_API_HASH=OTHER_HASH)
+        self.assertEqual(auth.get_credentials(), (54321, OTHER_HASH))
 
     def test_invalid_config_never_echoes_contents(self):
         auth.config_path().write_text("not-json-private-example", encoding="utf-8")
@@ -65,7 +68,7 @@ class CredentialsTests(unittest.TestCase):
         self.assertEqual(auth.get_session(), str(Path.home() / "telegram-example/session"))
 
     def test_missing_session_does_not_start_login_or_create_file(self):
-        os.environ.update(TG_API_ID="12345", TG_API_HASH="example-hash",
+        os.environ.update(TG_API_ID="12345", TG_API_HASH=TEST_HASH,
                           TG_SESSION=str(self.path / "absent"))
         with patch.object(auth, "make_client") as factory:
             with self.assertRaises(SystemExit):
@@ -77,7 +80,7 @@ class CredentialsTests(unittest.TestCase):
     def test_expired_session_does_not_start_interactive_auth(self):
         session = self.path / "existing"
         auth.session_file(str(session)).touch()
-        os.environ.update(TG_API_ID="12345", TG_API_HASH="example-hash", TG_SESSION=str(session))
+        os.environ.update(TG_API_ID="12345", TG_API_HASH=TEST_HASH, TG_SESSION=str(session))
         client = Mock()
         client.is_user_authorized.return_value = False
         with patch.object(auth, "make_client", return_value=client):
@@ -90,7 +93,7 @@ class CredentialsTests(unittest.TestCase):
     def test_offline_check_does_not_validate_login(self):
         session = self.path / "existing"
         auth.session_file(str(session)).touch()
-        os.environ.update(TG_API_ID="12345", TG_API_HASH="example-hash", TG_SESSION=str(session))
+        os.environ.update(TG_API_ID="12345", TG_API_HASH=TEST_HASH, TG_SESSION=str(session))
         with patch.object(setup, "get_client") as factory, contextlib.redirect_stdout(io.StringIO()) as out:
             setup.check(offline=True)
         factory.assert_not_called()
@@ -131,6 +134,11 @@ class SendTests(unittest.TestCase):
 
 
 class OnboardingTests(unittest.TestCase):
+    def setUp(self):
+        guard = patch.object(setup, "is_elevated", return_value=False)
+        guard.start()
+        self.addCleanup(guard.stop)
+
     def test_new_user_can_store_keys_and_reach_local_login(self):
         with tempfile.TemporaryDirectory() as tmp:
             config = Path(tmp) / "config.json"
@@ -143,14 +151,14 @@ class OnboardingTests(unittest.TestCase):
                  patch.object(setup, "get_credentials", side_effect=SystemExit("Нет API-ключей")), \
                  patch.object(setup, "api_guide") as guide, \
                  patch("builtins.input", side_effect=["12345", "yes"]), \
-                 patch.object(setup.getpass, "getpass", return_value="local-example-hash"), \
+                 patch.object(setup.getpass, "getpass", return_value=TEST_HASH), \
                  patch.object(setup, "get_session", return_value=session), \
                  patch.object(setup, "make_client", return_value=client), \
                  contextlib.redirect_stdout(io.StringIO()) as out:
                 setup.setup()
             guide.assert_called_once()
             self.assertEqual(json.loads(config.read_text())["api_id"], 12345)
-            self.assertNotIn("local-example-hash", out.getvalue())
+            self.assertNotIn(TEST_HASH, out.getvalue())
             client.start.assert_called_once()
             self.assertTrue(callable(client.start.call_args.kwargs["code_callback"]))
             client.send_message.assert_not_called()
@@ -160,7 +168,7 @@ class OnboardingTests(unittest.TestCase):
              patch.object(setup, "get_credentials", side_effect=SystemExit("Нет API-ключей")), \
              patch.object(setup, "api_guide"), \
              patch("builtins.input", side_effect=["12345", "n"]), \
-             patch.object(setup.getpass, "getpass", return_value="example-hash"), \
+             patch.object(setup.getpass, "getpass", return_value=TEST_HASH), \
              patch.object(setup, "save_credentials") as save, \
              patch.object(setup, "make_client") as factory, \
              contextlib.redirect_stdout(io.StringIO()):
@@ -176,7 +184,7 @@ class OnboardingTests(unittest.TestCase):
             client.is_user_authorized.return_value = True
             client.get_me.return_value = type("User", (), {"bot": False})()
             with patch.object(sys.stdin, "isatty", return_value=True), \
-                 patch.object(setup, "get_credentials", return_value=(12345, "example-hash")), \
+                 patch.object(setup, "get_credentials", return_value=(12345, TEST_HASH)), \
                  patch.object(setup, "get_session", return_value=session), \
                  patch.object(setup, "make_client", return_value=client), \
                  contextlib.redirect_stdout(io.StringIO()):
@@ -188,11 +196,11 @@ class OnboardingTests(unittest.TestCase):
     def test_guide_does_not_require_telethon_or_credentials(self):
         with tempfile.TemporaryDirectory() as tmp:
             env = dict(os.environ, TG_CONFIG=str(Path(tmp) / "absent.json"))
-            result = subprocess.run([sys.executable, str(ROOT / "scripts/setup_telegram.py"), "api-guide"],
+            result = subprocess.run([sys.executable, "-S", str(ROOT / "scripts/setup_telegram.py"), "api-guide"],
                                     capture_output=True, text=True, encoding="utf-8", env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("sudo nano /etc/hosts", result.stdout)
-        self.assertIn("Ctrl + O", result.stdout)
+        self.assertIn("hosts_telegram.py add", result.stdout)
 
     def test_setup_requires_private_interactive_terminal(self):
         result = subprocess.run([sys.executable, str(ROOT / "scripts/setup_telegram.py"), "setup"],
